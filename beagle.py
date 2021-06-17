@@ -113,13 +113,29 @@ class CustomDataset(utils.Dataset):
         #   'size': 100202
         # }
         # We mostly care about the x and y coordinates of each region
-        annotations1 = json.load(open(os.path.join(dataset_dir, "via_region_data.json")))
+        #annotations1 = json.load(open(os.path.join(dataset_dir, "via_region_data.json")))
         # print(annotations1)
-        annotations = list(annotations1.values())  # don't need the dict keys
+        annotations = []
+        annotations = json.load(open(os.path.join(dataset_dir, "via_region_data.json")))
+        via_1_check = annotations.get('regions')
+        via_2_check = annotations.get('_via_img_metadata')
+
+# JSON is formatted with VIA-1.x
+        if via_1_check:
+          annotations = list(annotations.values())
+# JSON is formatted with VIA-2.x
+        elif via_2_check:
+          annotations = list(annotations['_via_img_metadata'].values())
+# Unknown JSON formatting
+        else:
+           raise ValueError('The JSON provided is not in a recognised via-1.x or via-2.x format.')
+    
+        annotations = [a for a in annotations if a['regions']]
+          # don't need the dict keys
 
         # The VIA tool saves images in the JSON even if they don't have any
         # annotations. Skip unannotated images.
-        annotations = [a for a in annotations if a['regions']]
+        #annotations = [a for a in annotations if a['regions']]
 
         # Add images
         for a in annotations:
@@ -197,7 +213,7 @@ def train(model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=10,
+                epochs=150,
                 layers='heads')
 
 
